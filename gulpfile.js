@@ -16,7 +16,6 @@ var size = require('gulp-size');
 var mainBowerFiles = require('gulp-main-bower-files');
 
 var browserSync = require('browser-sync');
-var reload = browserSync.reload;
 
 var gulpLoadPlugins = require('gulp-load-plugins');
 const $ = gulpLoadPlugins();
@@ -99,27 +98,62 @@ gulp.task('images', ['clean'], function() {
     .pipe(gulp.dest(dest + 'images'));
 });
 
-//convert less to css, concatenate, sourcemap and minify all css
-gulp.task('styles', ['clean'], function() {
 
-  var compileLess = gulp.src([src + 'styles/less/**/*.less'])
-		.pipe(sourcemaps.init())
+
+
+
+//convert less to css
+gulp.task('less', ['clean'], function() {
+
+
+  // var compileLess = gulp.src([src + 'styles/less/**/*.less'])
+		// .pipe(sourcemaps.init())
+  //   .pipe(less())
+  //   .pipe(sourcemaps.write('./maps'))
+  //   .pipe(gulp.dest(src + 'styles/less/dist/'));
+
+  // var css = gulp.src([src + 'styles/**/*.css'])
+		// .pipe(sourcemaps.init())
+		// .pipe(autoprefixer('last 3 versions'))
+  //   .pipe(concat('styles.css'))
+  //   //.pipe(minifyCSS())
+  //   .pipe(size({title: 'Size of styles'}))
+  //   .pipe(sourcemaps.write('./maps'))
+  //   .pipe(gulp.dest(dest + 'styles/'))
+  //   .pipe(reload({ stream:true }));
+    
+  //   return merge(compileLess, css);
+
+
+  var compileLess = gulp.src([src + 'styles/less/*.less'])
+    .pipe($.ignore.exclude('_*.less'))
+    .pipe(sourcemaps.init())
     .pipe(less())
     .pipe(sourcemaps.write('./maps'))
-    .pipe(gulp.dest(src + 'styles/less/dist/'));
+    .pipe(gulp.dest(src + 'styles/less/dist/'))
+    .pipe(reload({ stream:true }));
 
-  var css = gulp.src([src + 'styles/**/*.css'])
-		.pipe(sourcemaps.init())
-		.pipe(autoprefixer('last 3 versions'))
+return compileLess;
+
+});
+
+
+//concatenate, sourcemap and minify all css
+gulp.task('styles', ['clean', 'less'], function() {
+
+  return gulp.src([src + 'styles/**/*.css'])
+    .pipe(sourcemaps.init())
+    .pipe(autoprefixer('last 3 versions'))
     .pipe(concat('styles.css'))
-    //.pipe(minifyCSS())
+    .pipe(minifyCSS())
     .pipe(size({title: 'Size of styles'}))
     .pipe(sourcemaps.write('./maps'))
     .pipe(gulp.dest(dest + 'styles/'))
     .pipe(reload({ stream:true }));
     
-    return merge(compileLess, css);
 });
+
+
 
 // get bower libraries
 gulp.task('bower', ['clean'], function(){
@@ -197,5 +231,5 @@ gulp.task('serve', ['default'], function() {
     startPath: "/index.php" // serve the file
     */
   });
-  gulp.watch(['*.html', '*.php', 'scripts/**/*.js'], {cwd: dest}, reload);
+  gulp.watch(['*.html', '*.php', 'scripts/**/*.js'], {cwd: dest}, browserSync.reload);
 });
