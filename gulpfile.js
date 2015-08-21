@@ -23,7 +23,6 @@ const $ = gulpLoadPlugins();
 
 var del = require('del');
 var merge = require('merge-stream');
-var php = require('gulp-connect-php');
 
 
 var src = './src/';
@@ -54,7 +53,8 @@ gulp.task('html', function() {
 gulp.task('php', function() {
   gulp.src(src + '/**/*.php')
     .pipe(changed(dest))
-    .pipe(gulp.dest(dest));
+    .pipe(gulp.dest(dest))
+    .pipe(reload({ stream:true }));
 });
 
 gulp.task('allOther', function() {
@@ -106,7 +106,6 @@ gulp.task('images', ['clean'], function() {
 
 //convert less to css
 gulp.task('less', ['clean'], function() {
-
   return gulp.src([src + 'styles/less/*.less'])
     .pipe($.ignore.exclude('_*.less'))
     .pipe(sourcemaps.init())
@@ -114,22 +113,18 @@ gulp.task('less', ['clean'], function() {
     .pipe(sourcemaps.write('./maps'))
     .pipe(gulp.dest(src + 'styles/less/dist/'))
     ;
-
-
 });
 //concatenate, sourcemap and minify all css
 gulp.task('styles', ['clean', 'less'], function() {
-
-  return gulp.src([src + 'styles/**/*.css'])
+  return gulp.src([ src + 'styles/**/site.css', src + 'styles/**/*.css'])
     .pipe(sourcemaps.init())
     .pipe(autoprefixer('last 3 versions'))
     .pipe(concat('styles.css'))
-    .pipe(minifyCSS())
+    .pipe(minifyCSS({processImport: false}))
     .pipe(size({title: 'Size of styles'}))
     .pipe(sourcemaps.write('./maps'))
     .pipe(gulp.dest(dest + 'styles/'))
     .pipe(reload({ stream:true }));
-    
 });
 
 
@@ -182,12 +177,13 @@ gulp.task('watch', function() {
  });
 
 
+// Watch for changes in files
+gulp.task('run', ['images', 'styles', 'scripts', 'bower', 'html', 'php', 'allOther'], function() {});
+
+
 // default gulp task
-gulp.task('default', function() {
-	//return gulp.src(dest + '**/*').pipe($.size({title: 'Size of '}));
-	
-	gulp.run('images', 'styles', 'scripts', 'bower', 'html', 'php', 'allOther');
-	
+gulp.task('default', ['run'], function() {
+
    // Watch .js files
   gulp.watch(src + 'scripts/*.js', ['scripts']);
    // Watch .less and .css files
@@ -202,19 +198,14 @@ gulp.task('default', function() {
 });
 
 
-gulp.task('phpReload', function() {
-    php.server({ base: 'build', port: 8010, keepalive: true});
-});
-
-
 // live reload
 gulp.task('serve', ['default'], function() {
   browserSync({
     //server: {baseDir: dest} // for local files
-    files: ["*.php"],
+    //files: ["*.php"],
     proxy: "127.0.0.1", // for local server
     startPath: "/server_adi_2/_tests/gulpProject/_build/test.php" // serve the file
 
   });
-  gulp.watch(['*.php'], {cwd: dest}, reload);
+  //gulp.watch(['*.php'], {cwd: dest}, reload);
 });
