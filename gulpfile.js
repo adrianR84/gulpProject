@@ -16,12 +16,15 @@ var size = require('gulp-size');
 var mainBowerFiles = require('gulp-main-bower-files');
 
 var browserSync = require('browser-sync');
+var reload = browserSync.reload;
 
 var gulpLoadPlugins = require('gulp-load-plugins');
 const $ = gulpLoadPlugins();
 
 var del = require('del');
 var merge = require('merge-stream');
+var php = require('gulp-connect-php');
+
 
 var src = './src/';
 var dest = './_build/';
@@ -44,7 +47,8 @@ gulp.task('html', function() {
   gulp.src(src + '/**/*.html')
     .pipe(changed(dest))
     .pipe(minifyHTML())
-    .pipe(gulp.dest(dest));
+    .pipe(gulp.dest(dest))
+    .pipe(reload({ stream:true }));;
 });
 
 gulp.task('php', function() {
@@ -87,7 +91,8 @@ gulp.task('scripts', ['clean'], function() {
     .pipe(uglify())
     .pipe(size({title: 'Size of scripts'}))
     .pipe(sourcemaps.write('./maps'))
-    .pipe(gulp.dest(dest + 'scripts/'));
+    .pipe(gulp.dest(dest + 'scripts/'))
+    .pipe(reload({ stream:true }));
 });
 
 // minify new images
@@ -99,45 +104,19 @@ gulp.task('images', ['clean'], function() {
 });
 
 
-
-
-
 //convert less to css
 gulp.task('less', ['clean'], function() {
 
-
-  // var compileLess = gulp.src([src + 'styles/less/**/*.less'])
-		// .pipe(sourcemaps.init())
-  //   .pipe(less())
-  //   .pipe(sourcemaps.write('./maps'))
-  //   .pipe(gulp.dest(src + 'styles/less/dist/'));
-
-  // var css = gulp.src([src + 'styles/**/*.css'])
-		// .pipe(sourcemaps.init())
-		// .pipe(autoprefixer('last 3 versions'))
-  //   .pipe(concat('styles.css'))
-  //   //.pipe(minifyCSS())
-  //   .pipe(size({title: 'Size of styles'}))
-  //   .pipe(sourcemaps.write('./maps'))
-  //   .pipe(gulp.dest(dest + 'styles/'))
-  //   .pipe(reload({ stream:true }));
-    
-  //   return merge(compileLess, css);
-
-
-  var compileLess = gulp.src([src + 'styles/less/*.less'])
+  return gulp.src([src + 'styles/less/*.less'])
     .pipe($.ignore.exclude('_*.less'))
     .pipe(sourcemaps.init())
     .pipe(less())
     .pipe(sourcemaps.write('./maps'))
     .pipe(gulp.dest(src + 'styles/less/dist/'))
-    .pipe(reload({ stream:true }));
+    ;
 
-return compileLess;
 
 });
-
-
 //concatenate, sourcemap and minify all css
 gulp.task('styles', ['clean', 'less'], function() {
 
@@ -222,14 +201,20 @@ gulp.task('default', function() {
   gulp.watch(src + '**/*.php', ['php']);
 });
 
-// watch files for changes and reload
+
+gulp.task('phpReload', function() {
+    php.server({ base: 'build', port: 8010, keepalive: true});
+});
+
+
+// live reload
 gulp.task('serve', ['default'], function() {
   browserSync({
-    server: {baseDir: dest} // for local files
-    /*
-    proxy: "127.0.0.1/....", // for local server
-    startPath: "/index.php" // serve the file
-    */
+    //server: {baseDir: dest} // for local files
+    files: ["*.php"],
+    proxy: "127.0.0.1", // for local server
+    startPath: "/server_adi_2/_tests/gulpProject/_build/test.php" // serve the file
+
   });
-  gulp.watch(['*.html', '*.php', 'scripts/**/*.js'], {cwd: dest}, browserSync.reload);
+  gulp.watch(['*.php'], {cwd: dest}, reload);
 });
